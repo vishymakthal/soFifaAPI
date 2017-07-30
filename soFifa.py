@@ -15,8 +15,8 @@ class soFifaProfile:
 		self.playerID = self.getPlayerID(playerID)
 		self.profile = self.openPlayerPage()
 
-		self.Nation = str(re.search(r'(?<=title\=\")[A-Za-z]+' , str(self.profile.find('div',class_='meta').find('span').contents[1])).group())
-		self.Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[4]).group())
+		self.Nation = str(re.search(r'(?<=title\=\")[A-Za-z ]+' , str(self.profile.find('div',class_='meta').find('span').contents[1])).group())
+		self.Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[-1]).group())
 		self.Position = str(self.profile.find('div',class_='meta').find('span').find_all('span')[1].contents[0])
 		self.Club = str(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
 		self.Rating = int(self.profile.find_all('td',class_='text-center')[0].find('span').contents[0])
@@ -59,12 +59,6 @@ class soFifaProfile:
 		page = urllib2.urlopen(request)
 		soup = bs(page.read(),'html5lib')
 		return soup
-
-	def retrieveNation(self):
-		listOfSpans = self.profile.select('span[class*="n"]')
-		nationElement = listOfSpans[len(listOfSpans)-1] #For now, nation is the last element in this list. This is Google level stuff right here.
-		return re.search(r'(?<=title\=\")[A-Za-z]+',str(nationElement)).group()
-
 
 #							GETTERS START HERE
 #-------------------------------------------------------------------------------
