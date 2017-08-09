@@ -15,15 +15,16 @@ class soFifaProfile:
 		self.playerID = self.getPlayerID(playerID)
 		self.profile = self.openPlayerPage()
 
+		self.playerName = self.profile.find('div',class_='meta').find('span').contents[0]
 		self.Nation = str(re.search(r'(?<=title\=\")[A-Za-z ]+' , str(self.profile.find('div',class_='meta').find('span').contents[1])).group())
 		self.Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[-1]).group())
 		self.Position = str(self.profile.find('div',class_='meta').find('span').find_all('span')[1].contents[0])
-		self.Club = str(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
+		self.Club = unicode(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
 		self.Rating = int(self.profile.find_all('td',class_='text-center')[0].find('span').contents[0])
 		self.Potential = int(self.profile.find_all('td',class_='text-center')[1].find('span').contents[0])
 
 		self.json = {
-		'Name' : name,
+		'Name' : self.playerName,
 		'ID' : self.playerID ,
 		'Age' : self.Age ,
 		'Nation' : self.Nation ,
@@ -33,6 +34,73 @@ class soFifaProfile:
 		'Potential' : self.Potential
 		}
 
+class Squad:
+
+	teamLink = 'https://sofifa.com/team/'
+
+	def __init__(self,teamID):
+		self.teamID = teamID
+		self.teamLink = 'https://sofifa.com/team/' + str(self.teamID)
+
+	def report(self):
+		request = urllib2.Request(self.teamLink, headers={'User-Agent': 'Mozilla/5.0'})
+		page = urllib2.urlopen(request)
+		html = bs(page.read(), 'html5lib')
+
+		mainSquadTable = html.find_all('table', class_="table table-hover persist-area")[0].tbody
+		loaneeTable = html.find_all('table', class_="table table-hover persist-area")[1].tbody
+		teamName = str(html.find('div', class_="info").h1.contents[0]).split()[0]
+
+		mainRows = mainSquadTable.find_all('tr')
+		loaneeRows = loaneeTable.find_all('tr')
+
+		response = {"teamName": teamName, "players": []}
+
+		for i in range(len(mainRows)):
+
+			row = mainRows[i].find_all('td')
+			infoCell = row[1].div.find_all('a')
+			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
+			name = ""
+			try:
+				name = re.search(r'(?<=title\=\")[^\"]+', str(infoCell[1])).group()
+			except Exception:
+				print 'Failed on ' + str(infoCell)
+			position = str(infoCell[2].span.contents[0])
+			age = str(row[2].div.contents[0]).replace('\n', '')
+			rating = int(row[3].div.span.contents[0])
+			potential = int(row[4].div.span.contents[0])
+			growth = potential - rating
+			loaned = False
+			loanedTo = None
+
+			response["players"].append(
+				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
+				 "Potential": potential, "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
+
+		for i in range(len(loaneeRows)):
+
+			row = loaneeRows[i].find_all('td')
+			infoCell = row[1].div.find_all('a')
+			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
+			name = ""
+			try:
+				name = re.search(r'(?<=title\=\")[^\"]+', str(infoCell[1])).group()
+			except Exception:
+				print 'Failed on ' + str(infoCell)
+			position = str(infoCell[2].span.contents[0])
+			age = str(row[2].div.contents[0]).replace('\n', '')
+			rating = int(row[3].div.span.contents[0])
+			potential = int(row[4].div.span.contents[0])
+			growth = potential - rating
+			loaned = True
+			loanedTo = row[5].a.contents[0]
+			response['players'].append(
+				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
+				 "Potential": potential,
+				 "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
+
+		return response
 
 #						CONSTRUCTOR HELPER METHODS
 #-------------------------------------------------------------------------------
@@ -43,8 +111,8 @@ class soFifaProfile:
 
 		request = urllib2.Request(self.searchLink + self.playerName, headers = {'User-Agent' : 'Mozilla/5.0'})
 		page = urllib2.urlopen(request)
-		soup = bs(page.read(),'html5lib')
-		searchResult = soup.select('a[href*="/player/"]')
+		html = bs(page.read(),'html5lib')
+		searchResult = html.select('a[href*="/player/"]')
 
 		if(len(searchResult) != 1):
 			raise SearchResultException('Player name brought up too many soFifa search results, so playerID couldn\'t be retrieved. Please provide a playerID.')
@@ -57,8 +125,8 @@ class soFifaProfile:
 
 		request = urllib2.Request(self.profileLink + self.playerID, headers = {'User-Agent' : 'Mozilla/5.0'})
 		page = urllib2.urlopen(request)
-		soup = bs(page.read(),'html5lib')
-		return soup
+		html = bs(page.read(),'html5lib')
+		return html
 
 #							GETTERS START HERE
 #-------------------------------------------------------------------------------
