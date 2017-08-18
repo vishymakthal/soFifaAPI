@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup as bs
 import urllib2
 import re
+import json
+from unidecode import unidecode
 
 class SearchResultException(Exception):
 	pass
@@ -33,74 +35,6 @@ class soFifaProfile:
 		'Rating' : self.Rating ,
 		'Potential' : self.Potential
 		}
-
-class Squad:
-
-	teamLink = 'https://sofifa.com/team/'
-
-	def __init__(self,teamID):
-		self.teamID = teamID
-		self.teamLink = 'https://sofifa.com/team/' + str(self.teamID)
-
-	def report(self):
-		request = urllib2.Request(self.teamLink, headers={'User-Agent': 'Mozilla/5.0'})
-		page = urllib2.urlopen(request)
-		html = bs(page.read(), 'html5lib')
-
-		mainSquadTable = html.find_all('table', class_="table table-hover persist-area")[0].tbody
-		loaneeTable = html.find_all('table', class_="table table-hover persist-area")[1].tbody
-		teamName = str(html.find('div', class_="info").h1.contents[0]).split()[0]
-
-		mainRows = mainSquadTable.find_all('tr')
-		loaneeRows = loaneeTable.find_all('tr')
-
-		response = {"teamName": teamName, "players": []}
-
-		for i in range(len(mainRows)):
-
-			row = mainRows[i].find_all('td')
-			infoCell = row[1].div.find_all('a')
-			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
-			name = ""
-			try:
-				name = re.search(r'(?<=title\=\")[^\"]+', str(infoCell[1])).group()
-			except Exception:
-				print 'Failed on ' + str(infoCell)
-			position = str(infoCell[2].span.contents[0])
-			age = str(row[2].div.contents[0]).replace('\n', '')
-			rating = int(row[3].div.span.contents[0])
-			potential = int(row[4].div.span.contents[0])
-			growth = potential - rating
-			loaned = False
-			loanedTo = None
-
-			response["players"].append(
-				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
-				 "Potential": potential, "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
-
-		for i in range(len(loaneeRows)):
-
-			row = loaneeRows[i].find_all('td')
-			infoCell = row[1].div.find_all('a')
-			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
-			name = ""
-			try:
-				name = re.search(r'(?<=title\=\")[^\"]+', str(infoCell[1])).group()
-			except Exception:
-				print 'Failed on ' + str(infoCell)
-			position = str(infoCell[2].span.contents[0])
-			age = str(row[2].div.contents[0]).replace('\n', '')
-			rating = int(row[3].div.span.contents[0])
-			potential = int(row[4].div.span.contents[0])
-			growth = potential - rating
-			loaned = True
-			loanedTo = row[5].a.contents[0]
-			response['players'].append(
-				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
-				 "Potential": potential,
-				 "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
-
-		return response
 
 #						CONSTRUCTOR HELPER METHODS
 #-------------------------------------------------------------------------------
@@ -150,4 +84,75 @@ class Squad:
 		return self.Age
 
 	def __str__(self):
-		return str(self.json)
+		return str(self.json)	
+
+class Squad:
+
+	teamIDs = json.load(open('TeamDictionary'))
+	teamLink = 'https://sofifa.com/team/'
+
+
+	def __init__(self,team):
+		self.teamID = self.teamIDs[team]
+		self.teamLink += str(self.teamID)
+
+	def report(self):
+		request = urllib2.Request(self.teamLink, headers={'User-Agent': 'Mozilla/5.0'})
+		page = urllib2.urlopen(request)
+		html = bs(page.read(), 'html5lib')
+
+		mainSquadTable = html.find_all('table', class_="table table-hover persist-area")[0].tbody
+		loaneeTable = html.find_all('table', class_="table table-hover persist-area")[1].tbody
+		teamName = re.search(r'[A-Za-z ]+',str(html.find('div', class_="info").h1.contents[0])).group().strip()
+
+		mainRows = mainSquadTable.find_all('tr')
+		loaneeRows = loaneeTable.find_all('tr')
+
+		response = {"teamName": teamName, "players": []}
+
+		for i in range(len(mainRows)):
+
+			row = mainRows[i].find_all('td')
+			infoCell = row[1].div.find_all('a')
+			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
+			name = str(unidecode(unicode(infoCell[1])))
+			print name
+			try:
+				name = re.search(r'(?<=title\=\")[^\"]+', name).group()
+			except Exception, e:
+				print 'Failed on ' + str(infoCell), str(e)
+			position = str(infoCell[2].span.contents[0])
+			age = str(row[2].div.contents[0]).replace('\n', '')
+			rating = int(row[3].div.span.contents[0])
+			potential = int(row[4].div.span.contents[0])
+			growth = potential - rating
+			loaned = False
+			loanedTo = None
+
+			response["players"].append(
+				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
+				 "Potential": potential, "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
+
+		for i in range(len(loaneeRows)):
+
+			row = loaneeRows[i].find_all('td')
+			infoCell = row[1].div.find_all('a')
+			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
+			name = ""
+			try:
+				name = unidecode(unicode((re.search(r'(?<=title\=\")[^\"]+', str(infoCell[1])).group())))
+			except Exception as e:
+				print 'Failed on ' + str(infoCell), str(e)
+			position = str(infoCell[2].span.contents[0])
+			age = str(row[2].div.contents[0]).replace('\n', '')
+			rating = int(row[3].div.span.contents[0])
+			potential = int(row[4].div.span.contents[0])
+			growth = potential - rating
+			loaned = True
+			loanedTo = row[5].a.contents[0]
+			response['players'].append(
+				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
+				 "Potential": potential,
+				 "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
+
+		return response
