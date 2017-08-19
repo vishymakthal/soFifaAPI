@@ -113,32 +113,15 @@ class Squad:
 
 		response = {"teamName": teamName, "players": []}
 
-		for i in range(len(mainRows)):
+		self.loadPlayers(mainRows,False,response["players"])
+		self.loadPlayers(loaneeRows,True,response["players"])
 
-			row = mainRows[i].find_all('td')
-			infoCell = row[1].div.find_all('a')
-			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
-			name = str(unidecode(unicode(infoCell[1])))
-			print name
-			try:
-				name = re.search(r'(?<=title\=\")[^\"]+', name).group()
-			except Exception, e:
-				print 'Failed on ' + str(infoCell), str(e)
-			position = str(infoCell[2].span.contents[0])
-			age = str(row[2].div.contents[0]).replace('\n', '')
-			rating = int(row[3].div.span.contents[0])
-			potential = int(row[4].div.span.contents[0])
-			growth = potential - rating
-			loaned = False
-			loanedTo = None
+		return response
 
-			response["players"].append(
-				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
-				 "Potential": potential, "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
+	def loadPlayers(self,rows,loaned,playerList):
+		for i in range(len(rows)):
 
-		for i in range(len(loaneeRows)):
-
-			row = loaneeRows[i].find_all('td')
+			row = rows[i].find_all('td')
 			infoCell = row[1].div.find_all('a')
 			nation = re.search(r'(?<=title\=\")[A-Za-z ]+', str(infoCell[0])).group()
 			name = ""
@@ -151,11 +134,12 @@ class Squad:
 			rating = int(row[3].div.span.contents[0])
 			potential = int(row[4].div.span.contents[0])
 			growth = potential - rating
-			loaned = True
-			loanedTo = row[5].a.contents[0]
-			response['players'].append(
+			if(loaned):
+				loanedTo = row[5].a.contents[0]
+			else:
+				loanedTo = None
+
+			playerList.append(
 				{"Age": age, "Name": name, "Position": position, 'Nation': nation, "Rating": rating,
 				 "Potential": potential,
 				 "Growth": growth, "Loaned": loaned, "LoanedTo": loanedTo})
-
-		return response
