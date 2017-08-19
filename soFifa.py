@@ -7,7 +7,7 @@ from unidecode import unidecode
 class SearchResultException(Exception):
 	pass
 
-class soFifaProfile:
+class Profile:
 
 	searchLink = 'https://sofifa.com/players?keyword='
 	profileLink = 'https://sofifa.com/player/'
