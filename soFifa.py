@@ -17,23 +17,23 @@ class soFifaProfile:
 		self.playerID = self.getPlayerID(playerID)
 		self.profile = self.openPlayerPage()
 
-		self.playerName = self.profile.find('div',class_='meta').find('span').contents[0]
-		self.Nation = str(re.search(r'(?<=title\=\")[A-Za-z ]+' , str(self.profile.find('div',class_='meta').find('span').contents[1])).group())
-		self.Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[-1]).group())
-		self.Position = str(self.profile.find('div',class_='meta').find('span').find_all('span')[1].contents[0])
-		self.Club = unicode(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
-		self.Rating = int(self.profile.find_all('td',class_='text-center')[0].find('span').contents[0])
-		self.Potential = int(self.profile.find_all('td',class_='text-center')[1].find('span').contents[0])
+		playerName = self.profile.find('div',class_='meta').find('span').contents[0]
+		Nation = str(self.profile.find('div',class_='meta').find('span').contents[1]['title'])
+		Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[-1]).group())
+		Position = str(self.profile.find('div',class_='meta').find('span').find_all('span')[1].contents[0])
+		Club = unicode(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
+		Rating = int(self.profile.find_all('td',class_='text-center')[0].find('span').contents[0])
+		Potential = int(self.profile.find_all('td',class_='text-center')[1].find('span').contents[0])
 
 		self.json = {
-		'Name' : self.playerName,
-		'ID' : self.playerID ,
-		'Age' : self.Age ,
-		'Nation' : self.Nation ,
-		'Club' : self.Club ,
-		'Position' : self.Position ,
-		'Rating' : self.Rating ,
-		'Potential' : self.Potential
+		'Name' : playerName,
+		'ID' : playerID ,
+		'Age' : Age ,
+		'Nation' : Nation ,
+		'Club' : Club ,
+		'Position' : Position ,
+		'Rating' : Rating ,
+		'Potential' : Potential
 		}
 
 #						CONSTRUCTOR HELPER METHODS
@@ -65,30 +65,33 @@ class soFifaProfile:
 #							GETTERS START HERE
 #-------------------------------------------------------------------------------
 
+	def getName(self):
+		return self.json["Name"]
+
 	def getNation(self):
-		return self.Nation
+		return self.json["Nation"]
 
 	def getPosition(self):
-		return self.Position
+		return self.json["Position"]
 
 	def getClub(self):
-		return self.Club
+		return self.json["Club"]
 
 	def getRating(self):
-		return self.Rating
+		return self.json["Rating"]
 
 	def getPotential(self):
-		return self.Potential
+		return self.json["Potential"]
 
 	def getAge(self):
-		return self.Age
+		return self.json["Age"]
 
 	def __str__(self):
-		return str(self.json)	
+		return str(self.json)
 
 class Squad:
 
-	teamIDs = json.load(open('TeamDictionary'))
+	teamIDs = json.load(open('TeamDictionary.json'))
 	teamLink = 'https://sofifa.com/team/'
 
 
