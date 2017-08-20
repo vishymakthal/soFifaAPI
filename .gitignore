@@ -1,2 +1,8 @@
 soFifaParseTesting.py
 *.pyc
+.idea/*
+HipsterSoccerBot.py
+GmailAPI.py
+TestModule.py
+MatchesToday.py
+populateteamdict.py
