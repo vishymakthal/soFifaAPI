@@ -20,7 +20,7 @@ class Profile:
 		playerName = self.profile.find('div',class_='meta').find('span').contents[0]
 		Nation = str(self.profile.find('div',class_='meta').find('span').contents[1]['title'])
 		Age = int(re.search(r'(?<=Age )[0-9]+' , self.profile.find('div',class_='meta').find('span').contents[-1]).group())
-		Position = str(self.profile.find('div',class_='meta').find('span').find_all('span')[1].contents[0])
+		Positions = [span.contents[0] for span in self.profile.find('div',class_='meta').span.find_all('span')]
 		Club = unicode(self.profile.find_all('a',href= re.compile('/team/[0-9]+'))[0].contents[0])
 		Rating = int(self.profile.find_all('td',class_='text-center')[0].find('span').contents[0])
 		Potential = int(self.profile.find_all('td',class_='text-center')[1].find('span').contents[0])
@@ -31,7 +31,7 @@ class Profile:
 		'Age' : Age ,
 		'Nation' : Nation ,
 		'Club' : Club ,
-		'Position' : Position ,
+		'Positions' : Positions ,
 		'Rating' : Rating ,
 		'Potential' : Potential
 		}
@@ -41,7 +41,7 @@ class Profile:
 
 	def getPlayerID(self,playerIDFromUser):
 		if(playerIDFromUser != None):
-			return playerIDFromUser
+			return str(playerIDFromUser)
 
 		request = urllib2.Request(self.searchLink + self.playerName, headers = {'User-Agent' : 'Mozilla/5.0'})
 		page = urllib2.urlopen(request)
@@ -71,8 +71,8 @@ class Profile:
 	def getNation(self):
 		return self.json["Nation"]
 
-	def getPosition(self):
-		return self.json["Position"]
+	def getPositions(self):
+		return self.json["Positions"]
 
 	def getClub(self):
 		return self.json["Club"]
